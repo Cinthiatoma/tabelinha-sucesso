@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tabelinha do Sucesso</title>
+<style>
+:root{--bg:#fff;--fg:#2b2b2b;--mut:#8a8a8a;--line:#ececec;--card:#fafafa;--acc:#2f6fdd;--ok:#d9efd9;--no:#fbdcdc;--na:#e3e3e6;--hl:#f2f6ff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#191919;--fg:#e8e8e8;--mut:#9a9a9a;--line:#2e2e2e;--card:#222;--acc:#6ea0ff;--ok:#24402a;--no:#4a2626;--na:#33343a;--hl:#1f2638}}
+:root[data-theme="dark"]{--bg:#191919;--fg:#e8e8e8;--mut:#9a9a9a;--line:#2e2e2e;--card:#222;--acc:#6ea0ff;--ok:#24402a;--no:#4a2626;--na:#33343a;--hl:#1f2638}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 -apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;gap:6px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+h1{font-size:18px;margin:0 12px 0 0}
+.tab{border:0;background:none;color:var(--mut);font:inherit;padding:8px 14px;border-radius:8px;cursor:pointer}
+.tab.on{background:var(--hl);color:var(--acc);font-weight:600}
+main{padding:16px;max-width:1000px;margin:0 auto}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{padding:10px 14px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--mut);font-weight:500;position:sticky;top:0;background:var(--bg)}
+tr:last-child td{border-bottom:0}th:last-child,td:last-child{border-right:0}
+td.d{cursor:pointer}td.d:hover{color:var(--acc)}
+tr.today td{background:var(--hl)}
+.chip{display:inline-block;font-size:16px}
+.tb{table-layout:fixed;min-width:520px}.tb th,.tb td{text-align:center}.tb th:first-child,.tb td:first-child{width:84px}.tb th,.tb td{white-space:normal;word-break:break-word;vertical-align:middle}
+.chip.na{color:var(--mut)}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:16px}
+.sum div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.sum b{display:block;font-size:20px}.sum span{color:var(--mut);font-size:13px;display:block}
+.nav{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+button,input,select{font:inherit;color:var(--fg)}
+.nav button,.nav input,.cad input,.cad select,.add{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.nav button,.add,.del{cursor:pointer}
+.task{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.opts{display:flex;gap:6px}
+.opts button{font-size:18px;border:2px solid transparent;background:var(--bg);border-radius:8px;padding:6px 14px;cursor:pointer;color:var(--mut)}
+.opts button.ok.on{background:var(--ok);border-color:#4caf50}
+.opts button.no.on{background:var(--no);border-color:#e53935}
+.opts button.na.on{background:var(--na);border-color:#9a9aa5;color:var(--fg)}
+.hint{color:var(--mut);font-size:13px;margin-top:12px}
+.cad input,.cad select{width:100%;box-sizing:border-box;min-width:90px}
+.cad td{padding:6px 8px}
+.del{border:0;background:none;font-size:16px;color:var(--mut)}
+.del.sure{color:#e53935;font-weight:600}
+.add{margin-top:12px;color:var(--acc)}
+</style>
+</head>
+<body>
+<header><h1>Tabelinha do Sucesso <small style="font-weight:400;color:var(--mut);font-size:14px">· Junior</small></h1>
+<button class="tab on" data-v="cons">Consultar</button>
+<button class="tab" data-v="reg">Registrar</button>
+<button class="tab" data-v="cad">Cadastro</button></header>
+<main id="app"></main>
+<script>
+const DIAS=["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
+const OPTS=[["ok","✅"],["no","❌"],["na","--"]];
+const KEY="tarefas-junior-v3";
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const br=s=>{const [y,m,d]=s.split("-");return d+"/"+m+"/"+y.slice(2)};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const DAYS=[...Array(90)].map((_,i)=>iso(new Date(2026,9,12+i)));
+let tasks=[{id:"t1",nome:"Caminhada",dia:"Seg",hora:"14:00"},{id:"t2",nome:"Curso",dia:"Qua",hora:""},{id:"t3",nome:"Caminhada",dia:"Qui",hora:"10:00"},{id:"t4",nome:"Terapia",dia:"Qui",hora:"17:00"}];
+let data={"2026-10-12": {"t1": "ok", "t2": "no", "t3": "no", "t4": "ok"}, "2026-10-13": {"t1": "ok", "t2": "ok", "t3": "ok", "t4": "na"}, "2026-10-14": {"t1": "ok", "t2": "ok", "t3": "ok", "t4": "no"}, "2026-10-15": {"t1": "ok", "t2": "no", "t3": "ok", "t4": "ok"}, "2026-10-16": {"t1": "na", "t2": "no", "t3": "ok", "t4": "ok"}, "2026-10-17": {"t1": "ok", "t2": "ok", "t3": "ok", "t4": "no"}, "2026-10-18": {"t1": "na", "t2": "na", "t3": "na", "t4": "no"}, "2026-10-19": {"t1": "no", "t2": "no", "t3": "ok", "t4": "ok"}, "2026-10-20": {"t1": "ok", "t2": "ok", "t3": "na", "t4": "na"}, "2026-10-21": {"t1": "ok", "t2": "ok", "t3": "no", "t4": "no"}, "2026-10-22": {"t1": "no", "t2": "ok", "t3": "ok", "t4": "ok"}, "2026-10-23": {"t1": "no", "t2": "ok", "t3": "ok", "t4": "ok"}};
+try{const r=JSON.parse(localStorage.getItem(KEY)||"null");if(r){tasks=r.tasks;data=r.data}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({tasks,data}))}catch(e){}};
+const label=t=>[t.nome||"(sem nome)",t.dia,t.hora?t.hora.replace(/:00$/,"h").replace(/^0/,"").replace(":","h"):""].filter(Boolean).join(" ");
+const todayIso=iso(new Date());
+let sel=DAYS.includes(todayIso)?todayIso:DAYS[0];
+let view="cons",armed=null;
+const chip=v=>{const o=OPTS.find(o=>o[0]===v);return o?`<span class="chip ${v}">${o[1]}</span>`:""};
+const get=(d,id)=>(data[d]||{})[id];
+function cons(){
+  if(!tasks.length)return `<p class="hint">Nenhuma tarefa cadastrada. Vá em Cadastro.</p>`;
+  const wd=d=>{const [y,m,dd]=d.split("-").map(Number);return DIAS[(new Date(y,m-1,dd).getDay()+6)%7]};
+  const exp=t=>DAYS.filter(d=>!DIAS.includes(t.dia)||wd(d)===t.dia).length;
+  const sum=tasks.map(t=>{const n=k=>DAYS.filter(d=>get(d,t.id)===k).length;const e=exp(t);const pc=e?Math.round(n("ok")/e*100):0;
+    return `<div><span>${esc(label(t))}</span><b style="font-size:16px;margin:2px 0">Total ${e} · ✅ ${n("ok")} · ❌ ${n("no")}</b><span>${pc}% feito</span></div>`}).join("");
+  const rows=DAYS.map(d=>`<tr class="${d===todayIso?"today":""}"><td class="d" data-d="${d}">${br(d)}</td>${tasks.map(t=>`<td>${chip(get(d,t.id))}</td>`).join("")}</tr>`).join("");
+  return `<div class="sum">${sum}</div><div class="wrap"><table class="tb"><thead><tr><th>Data</th>${tasks.map(t=>`<th>${esc(label(t))}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div><p class="hint">Toque em uma data para registrar aquele dia.</p>`;
+}
+function reg(){
+  const cur=data[sel]||{};
+  return `<div class="nav"><button id="prev">←</button><input type="date" id="dt" value="${sel}" min="${DAYS[0]}" max="${DAYS[DAYS.length-1]}"><button id="next">→</button><button id="hoje">Hoje</button></div>`+
+  (tasks.map(t=>`<div class="task"><strong>${esc(label(t))}</strong><div class="opts">${OPTS.map(o=>`<button class="${o[0]} ${cur[t.id]===o[0]?"on":""}" data-k="${t.id}" data-v="${o[0]}">${o[1]}</button>`).join("")}</div></div>`).join("")||`<p class="hint">Nenhuma tarefa cadastrada.</p>`)+
+  `<p class="hint">Toque novamente na opção marcada para limpar.</p>`;
+}
+function cad(){
+  const rows=tasks.map(t=>`<tr><td><input data-id="${t.id}" data-f="nome" value="${esc(t.nome)}" placeholder="Ex.: Fisioterapia"></td>
+  <td><select data-id="${t.id}" data-f="dia">${DIAS.map(d=>`<option ${d===t.dia?"selected":""}>${d}</option>`).join("")}</select></td>
+  <td><input type="time" data-id="${t.id}" data-f="hora" value="${t.hora}"></td>
+  <td><button class="del ${armed===t.id?"sure":""}" data-del="${t.id}">${armed===t.id?"Confirmar?":"🗑"}</button></td></tr>`).join("");
+  return `<p class="hint" style="margin-top:0">Cadastro de tarefas do Junior. As alterações aparecem em Consultar e Registrar.</p>
+  <div class="wrap cad"><table><thead><tr><th>Tarefa</th><th>Dia</th><th>Horário</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+  <button class="add" id="add">+ Nova tarefa</button>`;
+}
+function render(){
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.v===view));
+  const app=document.getElementById("app");
+  app.innerHTML={cons,reg,cad}[view]();
+  if(view==="cons")app.querySelectorAll("td.d").forEach(td=>td.onclick=()=>{sel=td.dataset.d;view="reg";render()});
+  if(view==="reg"){
+    const go=d=>{if(DAYS.includes(d)){sel=d;render()}};
+    const i=DAYS.indexOf(sel);
+    document.getElementById("prev").onclick=()=>go(DAYS[i-1]);
+    document.getElementById("next").onclick=()=>go(DAYS[i+1]);
+    document.getElementById("hoje").onclick=()=>go(todayIso);
+    document.getElementById("dt").onchange=e=>go(e.target.value);
+    app.querySelectorAll(".opts button").forEach(b=>b.onclick=()=>{
+      const o=data[sel]||(data[sel]={});const k=b.dataset.k;
+      if(o[k]===b.dataset.v)delete o[k];else o[k]=b.dataset.v;save();render()});
+  }
+  if(view==="cad"){
+    app.querySelectorAll("[data-f]").forEach(el=>el.onchange=()=>{
+      tasks.find(t=>t.id===el.dataset.id)[el.dataset.f]=el.value;save()});
+    app.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+      if(armed===b.dataset.del){tasks=tasks.filter(t=>t.id!==armed);armed=null;save()}else armed=b.dataset.del;render()});
+    document.getElementById("add").onclick=()=>{tasks.push({id:"t"+Date.now(),nome:"",dia:"Seg",hora:""});save();render()};
+  }
+}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{view=b.dataset.v;armed=null;render()});
+render();
+</script>
+</body>
+</html>
