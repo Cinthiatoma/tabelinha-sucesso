@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tabelinha do Sucesso</title>
+<style>
+:root{--bg:#fff;--fg:#2b2b2b;--mut:#8a8a8a;--line:#ececec;--card:#fafafa;--acc:#2f6fdd;--ok:#d9efd9;--no:#fbdcdc;--na:#e3e3e6;--hl:#f2f6ff;--wkb:#eef2f9;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#191919;--fg:#e8e8e8;--mut:#9a9a9a;--line:#2e2e2e;--card:#222;--acc:#6ea0ff;--ok:#24402a;--no:#4a2626;--na:#33343a;--hl:#1f2638;--wkb:#21242b}}
+:root[data-theme="dark"]{--bg:#191919;--fg:#e8e8e8;--mut:#9a9a9a;--line:#2e2e2e;--card:#222;--acc:#6ea0ff;--ok:#24402a;--no:#4a2626;--na:#33343a;--hl:#1f2638;--wkb:#21242b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 -apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;gap:8px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+h1{font-size:18px;margin:0 12px 0 0}h3{margin:22px 0 10px;font-size:15px}
+.tab{border:0;background:none;color:var(--mut);font:inherit;padding:8px 14px;border-radius:8px;cursor:pointer}
+.tab.on{background:var(--hl);color:var(--acc);font-weight:600}
+#usr{margin-left:auto}
+select,input,textarea,.btn{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.btn{cursor:pointer}.btn.p{background:var(--acc);color:#fff;border-color:var(--acc)}.btn.d{color:#d33}
+main{padding:16px;max-width:1000px;margin:0 auto}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%}
+.tb{table-layout:fixed;min-width:520px}.tb th:first-child,.tb td:first-child{width:96px}
+th,td{padding:10px 8px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);text-align:center;white-space:normal;word-break:break-word;vertical-align:middle}
+th{color:var(--mut);font-weight:500}tr:last-child td{border-bottom:0}th:last-child,td:last-child{border-right:0}
+tr.w1 td{background:var(--wkb)}
+td.c{cursor:pointer}td.c:hover{outline:2px solid var(--acc);outline-offset:-2px}td.d{cursor:pointer}td.d:hover{color:var(--acc)}tr.today td.d{color:var(--acc);font-weight:700}
+.chip{font-size:16px}.chip.na{color:var(--mut)}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:16px}
+.sum div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.sum b{display:block;font-size:16px;margin:2px 0}.sum span{color:var(--mut);font-size:13px;display:block}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}.row label{color:var(--mut);font-size:13px}.row input[type=text],.row .grow{flex:1;min-width:140px}
+.task{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.opts{display:flex;gap:6px}
+.opts button{font:inherit;font-size:18px;border:2px solid transparent;background:var(--bg);border-radius:8px;padding:6px 14px;cursor:pointer;color:var(--mut)}
+.opts .ok.on{background:var(--ok);border-color:#4caf50}.opts .no.on{background:var(--no);border-color:#e53935}.opts .na.on{background:var(--na);border-color:#9a9aa5;color:var(--fg)}
+.dias{display:flex;gap:4px;flex-wrap:wrap}.dchip{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer;color:var(--mut);background:var(--card)}.dchip input{display:none}.dchip:has(input:checked){background:var(--hl);color:var(--acc);border-color:var(--acc);font-weight:600}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}.md{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:16px;width:100%;max-width:520px;max-height:85vh;overflow:auto}.md h4{margin:0 0 12px;font-size:16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.hint{color:var(--mut);font-size:13px;margin-top:12px}textarea{width:100%;min-height:90px;box-sizing:border-box;font-size:12px}
+</style>
+</head>
+<body>
+<header><h1>Tabelinha do Sucesso</h1>
+<button class="tab" data-v="cons">Consultar</button>
+<button class="tab" data-v="reg">Registrar</button>
+<button class="tab" data-v="cad">Cadastro</button>
+<select id="usr"></select></header>
+<main id="app"></main>
+<script>
+const DIAS=["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"],OPTS=[["ok","✅"],["no","❌"],["na","--"]],KEY="tabelinha-plataforma-v1";
+const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,8);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const parse=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const br=s=>{const[y,m,d]=s.split("-");return d+"/"+m+"/"+y.slice(2)};
+const wd=d=>DIAS[(parse(d).getDay()+6)%7];
+let S={cur:"u1",from:"2026-10-12",to:"2027-01-09",data:{},users:[{id:"u1",name:"Junior",tasks:[
+{id:"t1",name:"Caminhada Seg 14h",dias:["Seg"]},{id:"t2",name:"Curso Qua",dias:["Qua"]},{id:"t3",name:"Caminhada Qui 10h",dias:["Qui"]},{id:"t4",name:"Terapia Qui 17h",dias:["Qui"]}]}]};
+try{const r=JSON.parse(localStorage.getItem(KEY));if(r&&r.users&&r.users.length)S=r}catch(e){}
+const mig=()=>S.users.forEach(u=>u.tasks.forEach(t=>{if(!t.dias){t.dias=t.dia&&t.dia!=="Todos"?[t.dia]:[];delete t.dia}}));mig();
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const user=()=>S.users.find(u=>u.id===S.cur)||S.users[0];
+const days=()=>{const a=[];let d=parse(S.from);const e=parse(S.to);while(d<=e&&a.length<731){a.push(iso(d));d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1)}return a};
+const get=(d,t)=>(((S.data[user().id]||{})[d])||{})[t]||"";
+const put=(d,t,v)=>{const u=user().id;S.data[u]=S.data[u]||{};S.data[u][d]=S.data[u][d]||{};S.data[u][d][t]=v;save()};
+const chip=v=>{const o=OPTS.find(o=>o[0]===v);return o?`<span class="chip ${v}">${o[1]}</span>`:""};
+const todayIso=iso(new Date());let view="cons",sel=todayIso,armed="",modal=null;
+
+function mdl(){
+  if(!modal)return "";const T=user().tasks;
+  return `<div class="ov" data-a="mclose"><div class="md" data-a="noop"><h4><button class="btn" data-a="mprev">←</button><span>${wd(modal)} ${br(modal)} · ${esc(user().name)}</span><button class="btn" data-a="mnext">→</button></h4>`+
+  T.map(t=>`<div class="task"><strong>${esc(t.name)}</strong><div class="opts">${OPTS.map(o=>`<button class="${o[0]} ${get(modal,t.id)===o[0]?"on":""}" data-a="mst" data-t="${t.id}" data-v="${o[0]}">${o[1]}</button>`).join("")}</div></div>`).join("")+
+  `<div class="row" style="justify-content:flex-end;margin:6px 0 0"><button class="btn p" data-a="mclose">Fechar</button></div></div></div>`;
+}
+function cons(){
+  const D=days(),T=user().tasks;
+  const rng=`<div class="row"><label>De</label><input type="date" data-c="from" value="${S.from}"><label>Até</label><input type="date" data-c="to" value="${S.to}"></div>`;
+  if(!T.length)return rng+`<p class="hint">Nenhuma tarefa para ${esc(user().name)}. Vá em Cadastro.</p>`;
+  const sum=T.map(t=>{const n=k=>D.filter(d=>get(d,t.id)===k).length;const e=D.filter(d=>!t.dias.length||t.dias.includes(wd(d))).length;const pc=e?Math.round(n("ok")/e*100):0;
+    return `<div><span>${esc(t.name)}</span><b>Total ${e} · ✅ ${n("ok")} · ❌ ${n("no")}</b><span>${pc}% feito</span></div>`}).join("");
+  let wk=-1;
+  const rows=D.map((d,i)=>{if(i===0||wd(d)==="Seg")wk++;
+    return `<tr class="w${wk%2}${d===todayIso?" today":""}"><td class="d" data-a="go" data-d="${d}">${wd(d)} ${br(d).slice(0,5)}</td>${T.map(t=>`<td class="c" data-a="cell" data-d="${d}" data-t="${t.id}">${chip(get(d,t.id)||(t.dias.length&&!t.dias.includes(wd(d))?"na":""))}</td>`).join("")}</tr>`}).join("");
+  return rng+`<div class="sum">${sum}</div><div class="wrap"><table class="tb"><thead><tr><th>Data</th>${T.map(t=>`<th>${esc(t.name)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div><p class="hint">Toque em uma célula para marcar (✅ → ❌ → -- → vazio). Toque na data para atualizar todas as tarefas daquele dia.</p>`+mdl();
+}
+function reg(){
+  const D=days(),T=user().tasks;
+  if(!D.length)return `<p class="hint">Período inválido. Ajuste em Consultar.</p>`;
+  if(!D.includes(sel))sel=D.includes(todayIso)?todayIso:D[0];
+  const i=D.indexOf(sel);
+  return `<div class="row"><button class="btn" data-a="prev">←</button><input type="date" data-c="sel" value="${sel}" min="${D[0]}" max="${D[D.length-1]}"><button class="btn" data-a="next">→</button><button class="btn" data-a="hoje">Hoje</button></div>`+
+  (T.length?T.map(t=>`<div class="task"><strong>${esc(t.name)}</strong><div class="opts">${OPTS.map(o=>`<button class="${o[0]} ${get(sel,t.id)===o[0]?"on":""}" data-a="st" data-t="${t.id}" data-v="${o[0]}">${o[1]}</button>`).join("")}</div></div>`).join(""):`<p class="hint">Nenhuma tarefa. Vá em Cadastro.</p>`)+
+  `<p class="hint">Toque de novo na opção marcada para limpar.</p>`;
+}
+function cad(){
+  const u=user(),pills=(ds,id,cl)=>`<div class="dias">${DIAS.map(x=>`<label class="dchip"><input type="checkbox" ${id?`data-c="tdias" data-id="${id}" data-d="${x}"`:`class="nd" value="${x}"`} ${ds.includes(x)?"checked":""}>${x}</label>`).join("")}</div>`;
+  const arm=(k,l)=>`<button class="btn d" data-a="${k.split(":")[0]}" data-id="${k.split(":")[1]}">${armed===k?"Confirmar?":l}</button>`;
+  return `<h3>Usuários</h3>`+S.users.map(x=>`<div class="row"><input type="text" data-c="uname" data-id="${x.id}" value="${esc(x.name)}">${S.users.length>1?arm("deluser:"+x.id,"Excluir"):""}</div>`).join("")+
+  `<div class="row"><input type="text" id="nu" placeholder="Novo usuário"><button class="btn p" data-a="adduser">Adicionar</button></div>`+
+  `<h3>Tarefas de ${esc(u.name)}</h3>`+u.tasks.map(t=>`<div class="row"><input type="text" data-c="tname" data-id="${t.id}" value="${esc(t.name)}">${pills(t.dias,t.id)}${arm("deltask:"+t.id,"Excluir")}</div>`).join("")+
+  `<div class="row"><input type="text" id="nt" placeholder="Nova tarefa (ex.: Academia 7h)">${pills([],"")}<button class="btn p" data-a="addtask">Adicionar</button></div>`+
+  `<p class="hint">Marque os dias da semana de cada tarefa (um ou mais). Isso define quantas vezes ela é esperada no período; sem nenhum dia marcado, vale para todos os dias.</p>`+
+  `<h3>Backup</h3><textarea id="bk" placeholder="Gere o backup, copie o texto e guarde. Para restaurar, cole aqui."></textarea><div class="row" style="margin-top:8px"><button class="btn" data-a="bkgen">Gerar backup</button><button class="btn" data-a="bkrest">Restaurar</button></div>`;
+}
+function users(){const s=$("#usr");s.innerHTML=S.users.map(u=>`<option value="${u.id}" ${u.id===user().id?"selected":""}>${esc(u.name)}</option>`).join("")}
+function render(){
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.v===view));
+  users();$("#app").innerHTML=view==="cons"?cons():view==="reg"?reg():cad();
+}
+const A={
+  cell:b=>{const c=get(b.dataset.d,b.dataset.t),n=["","ok","no","na"];put(b.dataset.d,b.dataset.t,n[(n.indexOf(c)+1)%4])},
+  go:b=>{modal=b.dataset.d},noop:()=>1,
+  mclose:()=>{modal=null},
+  mst:b=>{const c=get(modal,b.dataset.t);put(modal,b.dataset.t,c===b.dataset.v?"":b.dataset.v)},
+  mprev:()=>{const D=days(),i=D.indexOf(modal);if(i>0)modal=D[i-1]},mnext:()=>{const D=days(),i=D.indexOf(modal);if(i<D.length-1)modal=D[i+1]},
+  st:b=>{const c=get(sel,b.dataset.t);put(sel,b.dataset.t,c===b.dataset.v?"":b.dataset.v)},
+  prev:()=>{const D=days(),i=D.indexOf(sel);if(i>0)sel=D[i-1]},next:()=>{const D=days(),i=D.indexOf(sel);if(i<D.length-1)sel=D[i+1]},hoje:()=>{sel=todayIso},
+  adduser:()=>{const n=$("#nu").value.trim();if(!n)return;const u={id:uid(),name:n,tasks:[]};S.users.push(u);S.cur=u.id;save()},
+  addtask:()=>{const n=$("#nt").value.trim();if(!n)return;user().tasks.push({id:uid(),name:n,dias:[...document.querySelectorAll(".nd:checked")].map(x=>x.value)});save()},
+  deluser:b=>{const k="deluser:"+b.dataset.id;if(armed!==k){armed=k;return}S.users=S.users.filter(u=>u.id!==b.dataset.id);delete S.data[b.dataset.id];S.cur=S.users[0].id;armed="";save()},
+  deltask:b=>{const k="deltask:"+b.dataset.id;if(armed!==k){armed=k;return}user().tasks=user().tasks.filter(t=>t.id!==b.dataset.id);armed="";save()},
+  bkgen:()=>{render();$("#bk").value=JSON.stringify(S);return 1},
+  bkrest:()=>{try{const r=JSON.parse($("#bk").value);if(r&&r.users&&r.users.length){S=r;mig();save();armed=""}}catch(e){}}
+};
+$("#app").onclick=e=>{const b=e.target.closest("[data-a]");if(!b)return;if(!b.dataset.a.startsWith("del"))armed="";const k=b.dataset.a==="cell",y=scrollY,w=k&&$(".wrap")?$(".wrap").scrollLeft:0;if(!A[b.dataset.a](b))render();if(k){scrollTo(0,y);const x=$(".wrap");if(x)x.scrollLeft=w}};
+$("#app").onchange=e=>{const t=e.target,c=t.dataset.c;if(!c)return;
+  if(c==="from"||c==="to"){const n={...S,[c]:t.value};if(t.value&&n.from<=n.to){S[c]=t.value;save()}}
+  else if(c==="sel"){if(days().includes(t.value))sel=t.value}
+  else if(c==="uname"){const u=S.users.find(x=>x.id===t.dataset.id);if(t.value.trim())u.name=t.value.trim();save()}
+  else{const k=user().tasks.find(x=>x.id===t.dataset.id);if(c==="tname"&&t.value.trim())k.name=t.value.trim();if(c==="tdias"){const x=t.dataset.d;k.dias=(t.checked?[...new Set([...k.dias,x])]:k.dias.filter(y=>y!==x)).sort((a,b)=>DIAS.indexOf(a)-DIAS.indexOf(b))}save()}
+  render()};
+$("#usr").onchange=e=>{S.cur=e.target.value;armed="";save();render()};
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{view=b.dataset.v;armed="";modal=null;render()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modal){modal=null;render()}});
+render();
+</script>
+</body>
+</html>
