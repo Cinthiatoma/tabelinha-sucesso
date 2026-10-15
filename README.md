@@ -1,53 +1,53 @@
 # 🏆 Tabelinha do Sucesso
 
-Plataforma simples para acompanhar tarefas de várias pessoas, cada uma com as suas tarefas, dias da semana e período de acompanhamento.
+Plataforma para acompanhar tarefas de várias pessoas, cada uma com as suas tarefas, dias da semana e período. Os dados ficam no **Firebase (plano gratuito)**, então aparecem iguais em qualquer aparelho.
 
-É uma página única e estática (`index.html`), sem dependências, sem build e sem servidor.
+Arquivos: `index.html` (a página inteira, sem build) e `firestore.rules` (regras de segurança do banco).
 
 ## Funcionalidades
 
-### Consultar
-- Tabela por período, com as datas no formato `Ter 13/10`.
-- Escolha do período em **De / Até** (até 2 anos).
-- Semanas (segunda a domingo) separadas por cores alternadas.
-- Resumo por tarefa: `Total · ✅ feitas · ❌ não feitas` e a porcentagem feita.
-- Dias em que a tarefa não está planejada aparecem automaticamente com `--`.
-- O dia de hoje fica destacado em azul. Tocar em uma data abre um painel para atualizar as tarefas daquele dia, sem sair da tela (com setas para o dia anterior e o próximo).
+- **Consultar**: tabela por período (De / Até), datas como `Ter 13/10`, semanas em cores alternadas, resumo por tarefa (`Total · ✅ · ❌` e % feito) e `--` nos dias sem tarefa planejada. Toque em uma célula para marcar (✅ → ❌ → `--` → vazio) ou na data para atualizar o dia todo.
+- **Registrar**: marca as tarefas de um dia, com navegação por setas, calendário e botão Hoje.
+- **Cadastro**: usuários e tarefas (com um ou mais dias da semana) e backup/restauração em texto.
+- **Login** por e-mail e senha: só quem você cadastrar no Firebase acessa.
 
-### Registrar
-- Escolha o dia (setas, calendário ou botão **Hoje**).
-- Marque cada tarefa como ✅ concluída, ❌ não concluída ou `--`. Tocar de novo na opção marcada limpa o campo.
+## Configurar o Firebase (gratuito, ~10 minutos)
 
-### Cadastro
-- **Usuários**: adicionar, renomear e excluir. O seletor no cabeçalho troca de usuário.
-- **Tarefas** (de cada usuário): adicionar, renomear e excluir, com um ou mais dias da semana.
-  - O total esperado considera só os dias marcados.
-  - Sem nenhum dia marcado, a tarefa vale para todos os dias.
-- **Backup**: gera um texto com todos os dados e permite restaurá-lo depois (também serve para levar os dados a outro aparelho).
-
-## Como publicar (GitHub Pages)
-
-1. Coloque `index.html` e `README.md` na raiz do repositório:
-   ```bash
-   git init
-   git add index.html README.md
-   git commit -m "Tabelinha do Sucesso"
-   git branch -M main
-   git remote add origin https://github.com/SEU_USUARIO/SEU_REPO.git
-   git push -u origin main
+1. Acesse https://console.firebase.google.com e clique em **Adicionar projeto**. Pode desativar o Google Analytics. O plano **Spark** é gratuito e não pede cartão.
+2. **Build → Authentication → Vamos começar → E-mail/senha → Ativar**. Na aba **Users**, clique em **Adicionar usuário** e crie o seu e-mail e senha.
+3. **Build → Firestore Database → Criar banco de dados**. Escolha o modo de produção e a região `southamerica-east1` (São Paulo).
+4. Na aba **Regras** do Firestore, cole o conteúdo de `firestore.rules`, troque `SEU_EMAIL@exemplo.com` pelo e-mail do passo 2 e clique em **Publicar**.
+5. Na engrenagem **Configurações do projeto → Seus apps → ícone Web `</>`**, registre um app e copie o `firebaseConfig`.
+6. Abra o `index.html`, procure por `const FB=` e preencha com os valores copiados:
+   ```js
+   const FB={apiKey:"...",authDomain:"...",projectId:"...",appId:"..."};
    ```
-2. No repositório, abra **Settings → Pages**.
-3. Em **Build and deployment**, escolha **Deploy from a branch**, branch `main`, pasta `/ (root)`, e clique em **Save**.
-4. Em 1 a 3 minutos o site fica em `https://SEU_USUARIO.github.io/SEU_REPO/`.
+7. Em **Authentication → Configurações → Domínios autorizados**, adicione `cinthiatoma.github.io` (ou o seu domínio). Sem isso o login não funciona no GitHub Pages.
+8. Suba o `index.html` no GitHub (veja abaixo) e abra o site. Entre com o e-mail e a senha do passo 2.
 
-Para atualizar o site, basta substituir o `index.html` no repositório e fazer o commit. Se a página abrir com a versão antiga, force a atualização com Ctrl+Shift+R (Cmd+Shift+R no Mac).
+Na primeira vez que você entrar, o app cria os dados iniciais na nuvem. Se o navegador tinha dados salvos da versão anterior, eles são aproveitados.
 
-## Sobre os dados
+## Como os dados ficam guardados
 
-- Tudo é salvo no `localStorage` do navegador. Cada aparelho e cada navegador tem os seus próprios dados, e limpar os dados do navegador apaga as marcações.
-- Faça backup com frequência em **Cadastro → Backup**.
-- Para que várias pessoas vejam os mesmos dados em aparelhos diferentes, seria preciso um banco de dados online (por exemplo Supabase ou Firebase). Esta versão não inclui isso.
+- `config/app`: um documento com os usuários, as tarefas de cada um e o período.
+- `marks`: uma linha por usuário e dia, com id `usuario_data` (ex.: `u1_2026-10-13`), contendo o status de cada tarefa (`ok`, `no` ou `na`).
 
-## Dados iniciais
+Você vê e edita tudo em **Firestore Database → Dados**. As alterações aparecem em tempo real em todos os aparelhos conectados.
 
-Na primeira abertura existe o usuário **Junior** com 4 tarefas (Caminhada Seg 14h, Curso Qua, Caminhada Qui 10h, Terapia Qui 17h) e o período 12/10/26 a 09/01/27. Tudo pode ser alterado nas telas.
+## Limites do plano gratuito (Spark)
+
+Cerca de 1 GiB de armazenamento, 50 mil leituras e 20 mil gravações por dia. Para uso pessoal ou de família, sobra bastante.
+
+## Publicar no GitHub Pages
+
+1. Coloque `index.html` (e, se quiser, `README.md` e `firestore.rules`) no repositório.
+2. **Settings → Pages → Deploy from a branch → `main` / `(root)` → Save**.
+3. Em 1 a 3 minutos o site abre em `https://SEU_USUARIO.github.io/SEU_REPO/`. Para atualizar, substitua o `index.html` e force o recarregamento (Ctrl+Shift+R ou Cmd+Shift+R).
+
+## Sem Firebase
+
+Se o objeto `FB` ficar vazio, a página funciona em modo local: os dados ficam só no navegador (`localStorage`) e não há login.
+
+## Segurança
+
+A `apiKey` do Firebase pode ficar visível no código, é assim que o Firebase funciona. O que protege os dados são as **regras do Firestore** (passo 4) e o login. Não deixe o banco em modo de teste nem com `allow read, write: if true`.

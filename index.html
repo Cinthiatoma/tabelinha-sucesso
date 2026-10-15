@@ -44,9 +44,9 @@ td.c{cursor:pointer}td.c:hover{outline:2px solid var(--acc);outline-offset:-2px}
 <button class="tab" data-v="cons">Consultar</button>
 <button class="tab" data-v="reg">Registrar</button>
 <button class="tab" data-v="cad">Cadastro</button>
-<select id="usr"></select></header>
+<select id="usr"></select><button class="tab" id="out" style="display:none">Sair</button></header>
 <main id="app"></main>
-<script>
+<script type="module">
 const DIAS=["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"],OPTS=[["ok","✅"],["no","❌"],["na","--"]],KEY="tabelinha-plataforma-v1";
 const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,8);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -56,13 +56,25 @@ const br=s=>{const[y,m,d]=s.split("-");return d+"/"+m+"/"+y.slice(2)};
 const wd=d=>DIAS[(parse(d).getDay()+6)%7];
 let S={cur:"u1",from:"2026-10-12",to:"2027-01-09",data:{},users:[{id:"u1",name:"Junior",tasks:[
 {id:"t1",name:"Caminhada Seg 14h",dias:["Seg"]},{id:"t2",name:"Curso Qua",dias:["Qua"]},{id:"t3",name:"Caminhada Qui 10h",dias:["Qui"]},{id:"t4",name:"Terapia Qui 17h",dias:["Qui"]}]}]};
-try{const r=JSON.parse(localStorage.getItem(KEY));if(r&&r.users&&r.users.length)S=r}catch(e){}
+// ===== FIREBASE: cole aqui a configuração do seu projeto (veja o README) =====
+const FB={apiKey:"",authDomain:"",projectId:"",appId:""};
+const CLOUD=!!(FB.apiKey&&FB.projectId);
+const U="https://www.gstatic.com/firebasejs/10.14.1/";
+const [{initializeApp},{getFirestore,doc,setDoc,deleteDoc,collection,onSnapshot},{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut}]=CLOUD?await Promise.all([import(U+"firebase-app.js"),import(U+"firebase-firestore.js"),import(U+"firebase-auth.js")]):[{},{},{}];
+let db,auth,ready=!CLOUD,gate="";
+if(!CLOUD)try{const r=JSON.parse(localStorage.getItem(KEY));if(r&&r.users&&r.users.length)S=r}catch(e){}
 const mig=()=>S.users.forEach(u=>u.tasks.forEach(t=>{if(!t.dias){t.dias=t.dia&&t.dia!=="Todos"?[t.dia]:[];delete t.dia}}));mig();
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const save=()=>{if(!CLOUD){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}return}
+  try{localStorage.setItem(KEY+"-cur",S.cur)}catch(e){}
+  setDoc(doc(db,"config","app"),{users:S.users,from:S.from,to:S.to}).catch(console.error)};
+const mark=(u,d)=>CLOUD?setDoc(doc(db,"marks",u+"_"+d),{userId:u,date:d,s:S.data[u][d]}).catch(console.error):save();
+const purge=id=>{if(CLOUD)Object.keys(S.data[id]||{}).forEach(d=>deleteDoc(doc(db,"marks",id+"_"+d)).catch(console.error))};
+const pushAll=()=>{if(CLOUD)Object.keys(S.data).forEach(u=>Object.keys(S.data[u]).forEach(d=>mark(u,d)))};
+const loginHtml=m=>`<div style="max-width:320px;margin:40px auto"><h3 style="margin-top:0">Entrar</h3><div class="row"><input type="email" id="em" class="grow" placeholder="E-mail"></div><div class="row"><input type="password" id="pw" class="grow" placeholder="Senha"></div><div class="row"><button class="btn p" data-a="login">Entrar</button></div>${m?`<p class="hint" style="color:#d33">${m}</p>`:""}</div>`;
 const user=()=>S.users.find(u=>u.id===S.cur)||S.users[0];
 const days=()=>{const a=[];let d=parse(S.from);const e=parse(S.to);while(d<=e&&a.length<731){a.push(iso(d));d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1)}return a};
 const get=(d,t)=>(((S.data[user().id]||{})[d])||{})[t]||"";
-const put=(d,t,v)=>{const u=user().id;S.data[u]=S.data[u]||{};S.data[u][d]=S.data[u][d]||{};S.data[u][d][t]=v;save()};
+const put=(d,t,v)=>{const u=user().id;S.data[u]=S.data[u]||{};S.data[u][d]=S.data[u][d]||{};S.data[u][d][t]=v;mark(u,d)};
 const chip=v=>{const o=OPTS.find(o=>o[0]===v);return o?`<span class="chip ${v}">${o[1]}</span>`:""};
 const todayIso=iso(new Date());let view="cons",sel=todayIso,armed="",modal=null;
 
@@ -104,6 +116,7 @@ function cad(){
 }
 function users(){const s=$("#usr");s.innerHTML=S.users.map(u=>`<option value="${u.id}" ${u.id===user().id?"selected":""}>${esc(u.name)}</option>`).join("")}
 function render(){
+  if(CLOUD&&!ready){$("#usr").innerHTML="";$("#app").innerHTML=gate;return}
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.v===view));
   users();$("#app").innerHTML=view==="cons"?cons():view==="reg"?reg():cad();
 }
@@ -117,10 +130,11 @@ const A={
   prev:()=>{const D=days(),i=D.indexOf(sel);if(i>0)sel=D[i-1]},next:()=>{const D=days(),i=D.indexOf(sel);if(i<D.length-1)sel=D[i+1]},hoje:()=>{sel=todayIso},
   adduser:()=>{const n=$("#nu").value.trim();if(!n)return;const u={id:uid(),name:n,tasks:[]};S.users.push(u);S.cur=u.id;save()},
   addtask:()=>{const n=$("#nt").value.trim();if(!n)return;user().tasks.push({id:uid(),name:n,dias:[...document.querySelectorAll(".nd:checked")].map(x=>x.value)});save()},
-  deluser:b=>{const k="deluser:"+b.dataset.id;if(armed!==k){armed=k;return}S.users=S.users.filter(u=>u.id!==b.dataset.id);delete S.data[b.dataset.id];S.cur=S.users[0].id;armed="";save()},
+  deluser:b=>{const k="deluser:"+b.dataset.id;if(armed!==k){armed=k;return}S.users=S.users.filter(u=>u.id!==b.dataset.id);purge(b.dataset.id);delete S.data[b.dataset.id];S.cur=S.users[0].id;armed="";save()},
   deltask:b=>{const k="deltask:"+b.dataset.id;if(armed!==k){armed=k;return}user().tasks=user().tasks.filter(t=>t.id!==b.dataset.id);armed="";save()},
+  login:()=>{signInWithEmailAndPassword(auth,$("#em").value.trim(),$("#pw").value).catch(()=>{gate=loginHtml("E-mail ou senha incorretos.");render()});return 1},
   bkgen:()=>{render();$("#bk").value=JSON.stringify(S);return 1},
-  bkrest:()=>{try{const r=JSON.parse($("#bk").value);if(r&&r.users&&r.users.length){S=r;mig();save();armed=""}}catch(e){}}
+  bkrest:()=>{try{const r=JSON.parse($("#bk").value);if(r&&r.users&&r.users.length){S=r;mig();save();pushAll();armed=""}}catch(e){}}
 };
 $("#app").onclick=e=>{const b=e.target.closest("[data-a]");if(!b)return;if(!b.dataset.a.startsWith("del"))armed="";const k=b.dataset.a==="cell",y=scrollY,w=k&&$(".wrap")?$(".wrap").scrollLeft:0;if(!A[b.dataset.a](b))render();if(k){scrollTo(0,y);const x=$(".wrap");if(x)x.scrollLeft=w}};
 $("#app").onchange=e=>{const t=e.target,c=t.dataset.c;if(!c)return;
@@ -132,7 +146,29 @@ $("#app").onchange=e=>{const t=e.target,c=t.dataset.c;if(!c)return;
 $("#usr").onchange=e=>{S.cur=e.target.value;armed="";save();render()};
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{view=b.dataset.v;armed="";modal=null;render()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modal){modal=null;render()}});
-render();
+$("#app").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="pw")A.login()});
+if(!CLOUD)render();else{
+  let L=null,curPref=null;try{L=JSON.parse(localStorage.getItem(KEY));curPref=localStorage.getItem(KEY+"-cur")}catch(e){}
+  if(curPref)S.cur=curPref;
+  const app=initializeApp(FB);db=getFirestore(app);auth=getAuth(app);
+  $("#out").onclick=()=>signOut(auth);
+  let unsub=[],okC=false,okM=false;
+  const refresh=()=>{if(!(okC&&okM))return;ready=true;const a=document.activeElement;if(!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))render()};
+  const err=e=>{ready=false;gate=`<p class="hint">Erro ao acessar o Firebase: ${esc(e.code||e.message)}</p>`;render()};
+  onAuthStateChanged(auth,u=>{
+    unsub.forEach(f=>f());unsub=[];okC=okM=false;ready=false;
+    $("#out").style.display=u?"":"none";
+    if(!u){gate=loginHtml("");render();return}
+    gate=`<p class="hint">Carregando…</p>`;render();
+    unsub.push(onSnapshot(doc(db,"config","app"),s=>{
+      if(s.exists()){const d=s.data();S.users=d.users;S.from=d.from;S.to=d.to;mig()}
+      else{if(L&&L.users&&L.users.length){S=L;mig();S.cur=curPref||S.cur}save();pushAll()}
+      if(!S.users.some(x=>x.id===S.cur))S.cur=S.users[0].id;
+      okC=true;refresh()},err));
+    unsub.push(onSnapshot(collection(db,"marks"),s=>{
+      const m={};s.forEach(x=>{const d=x.data();(m[d.userId]=m[d.userId]||{})[d.date]=d.s});S.data=m;okM=true;refresh()},err));
+  });
+}
 </script>
 </body>
 </html>

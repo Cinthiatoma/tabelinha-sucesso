@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Só quem está logado com um destes e-mails lê e grava.
+    // Troque pelo(s) e-mail(s) que você criou em Authentication → Users.
+    match /{document=**} {
+      allow read, write: if request.auth != null
+        && request.auth.token.email in ["SEU_EMAIL@exemplo.com"];
+    }
+  }
+}
