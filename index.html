@@ -57,7 +57,7 @@ const wd=d=>DIAS[(parse(d).getDay()+6)%7];
 let S={cur:"u1",from:"2026-10-12",to:"2027-01-09",data:{},users:[{id:"u1",name:"Junior",tasks:[
 {id:"t1",name:"Caminhada Seg 14h",dias:["Seg"]},{id:"t2",name:"Curso Qua",dias:["Qua"]},{id:"t3",name:"Caminhada Qui 10h",dias:["Qui"]},{id:"t4",name:"Terapia Qui 17h",dias:["Qui"]}]}]};
 // ===== FIREBASE: cole aqui a configuração do seu projeto (veja o README) =====
-const FB={apiKey:"",authDomain:"",projectId:"",appId:""};
+const FB={apiKey:"AIzaSyBdtdkPWnRhOhjIojSb0XbSAlzd1NK0Ykc",authDomain:"tabelinha-sucesso.firebaseapp.com",projectId:"tabelinha-sucesso",appId:"1:544482795714:web:21de53df11b40387395b5b"};
 const CLOUD=!!(FB.apiKey&&FB.projectId);
 const U="https://www.gstatic.com/firebasejs/10.14.1/";
 const [{initializeApp},{getFirestore,doc,setDoc,deleteDoc,collection,onSnapshot},{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut}]=CLOUD?await Promise.all([import(U+"firebase-app.js"),import(U+"firebase-firestore.js"),import(U+"firebase-auth.js")]):[{},{},{}];
